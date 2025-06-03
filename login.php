@@ -1,19 +1,28 @@
 <?php
 session_start();
 require 'db.php';
+
+if (empty($_SESSION['token'])) {
+    $_SESSION['token'] = bin2hex(random_bytes(32));
+}
+
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    $stmt = $pdo->prepare('SELECT * FROM users WHERE username = ?');
-    $stmt->execute([$username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($user && password_verify($password, $user['password'])) {
-        $_SESSION['user'] = $user['username'];
-        header('Location: index.php');
-        exit;
+    if (!isset($_POST['token']) || $_POST['token'] !== $_SESSION['token']) {
+        $message = 'Invalid request.';
     } else {
-        $message = 'Invalid credentials.';
+        $username = trim($_POST['username']);
+        $password = $_POST['password'];
+        $stmt = $pdo->prepare('SELECT * FROM users WHERE username = ?');
+        $stmt->execute([$username]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($user && password_verify($password, $user['password'])) {
+            $_SESSION['user'] = $user['username'];
+            header('Location: index.php');
+            exit;
+        } else {
+            $message = 'Invalid credentials.';
+        }
     }
 }
 ?>
@@ -30,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="alert alert-danger"><?php echo $message; ?></div>
     <?php endif; ?>
     <form method="post">
+        <input type="hidden" name="token" value="<?php echo htmlspecialchars($_SESSION['token']); ?>">
         <div class="form-group">
             <label>Username</label>
             <input type="text" name="username" class="form-control" required>

@@ -1,21 +1,31 @@
 <?php
 session_start();
 require 'db.php';
+
+if (empty($_SESSION['token'])) {
+    $_SESSION['token'] = bin2hex(random_bytes(32));
+}
+
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    if ($username && $password) {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare('INSERT INTO users (username, password) VALUES (?, ?)');
-        try {
-            $stmt->execute([$username, $hash]);
-            $message = 'Registration successful. You can now <a href="login.php">login</a>.';
-        } catch (PDOException $e) {
-            $message = 'Error: ' . $e->getMessage();
-        }
+    if (!isset($_POST['token']) || $_POST['token'] !== $_SESSION['token']) {
+        $message = 'Invalid request.';
     } else {
-        $message = 'Please fill in all fields.';
+        $username = trim($_POST['username']);
+        $password = $_POST['password'];
+        if ($username && $password) {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare('INSERT INTO users (username, password) VALUES (?, ?)');
+            try {
+                $stmt->execute([$username, $hash]);
+                $message = 'Registration successful. You can now <a href="login.php">login</a>.';
+            } catch (PDOException $e) {
+                error_log($e->getMessage());
+                $message = 'An error occurred while registering. Please try again.';
+            }
+        } else {
+            $message = 'Please fill in all fields.';
+        }
     }
 }
 ?>
@@ -32,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="alert alert-info"><?php echo $message; ?></div>
     <?php endif; ?>
     <form method="post">
+        <input type="hidden" name="token" value="<?php echo htmlspecialchars($_SESSION['token']); ?>">
         <div class="form-group">
             <label>Username</label>
             <input type="text" name="username" class="form-control" required>
