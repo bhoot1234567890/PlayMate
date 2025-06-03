@@ -69,9 +69,11 @@ session_start();
                             <a href="login.php">Login</a>
                         <?php endif; ?>
                     </li>
+                    <?php if (!isset($_SESSION['user'])): ?>
                     <li class="page-scroll">
                         <a href="register.php">Register</a>
                     </li>
+                    <?php endif; ?>
                 </ul>
             </div>
             <!-- /.navbar-collapse -->
