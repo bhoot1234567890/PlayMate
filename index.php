@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -60,8 +63,17 @@
                         <a href="#about">About</a>
                     </li>
                     <li class="page-scroll">
-                        <a href="#contact">Register</a>
+                        <?php if (isset($_SESSION['user'])): ?>
+                            <a href="logout.php">Logout (<?php echo htmlspecialchars($_SESSION['user']); ?>)</a>
+                        <?php else: ?>
+                            <a href="login.php">Login</a>
+                        <?php endif; ?>
                     </li>
+                    <?php if (!isset($_SESSION['user'])): ?>
+                    <li class="page-scroll">
+                        <a href="register.php">Register</a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
             <!-- /.navbar-collapse -->
